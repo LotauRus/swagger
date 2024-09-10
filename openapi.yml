@@ -1,0 +1,905 @@
+openapi: 3.0.0
+
+servers:
+  - url: https://uonvos.rpn.gov.ru/api/svc/onv/monitoring/
+    description: Основной сервер
+  - url: /api/svc/onv/monitoring/
+    description: Текущий сервер
+
+info:
+  description: |
+    # Предмет и сфера действия документа
+
+    Формат передачи данных предназначен для обеспечения передачи информации о показателях выбросов загрязняющих веществ и (или) сбросов загрязняющих веществ по информационно-телекоммуникационным сетям в технические средства фиксации и передачи информации в государственный реестр объектов, оказывающих негативное воздействие на окружающую среду.
+
+    # Термины и определения
+
+    - **ПТО УОНВОС** - программно-техническое обеспечение учета объектов, оказывающих негативное воздействие на окружающую среду, используемое для ведения государственного реестра объектов, оказывающих негативное воздействие на окружающую среду.
+    - **Формат передачи данных** - протокол передачи данных о показателях выбросов загрязняющих веществ в ПТО УОНВОС.
+    - **АСИ** - автоматические средства измерения и учета показателей выбросов загрязняющих веществ и (или) сбросов загрязняющих веществ.
+    - **Средство измерения** - техническое средство входящее в состав АСИ. Может измерять как один, так и несколько разных показателей.
+    - **ЭП** - электронная подпись: Передаваемая информация подписывается усиленной квалифицированной электронной подписью юридического лица, в сертификате которой не указывается в качестве владельца такого сертификата физическое лицо, действующее от имени юридического лица.
+    - **ECDSA** - (аббр. от англ. Elliptic Curve Digital Signature Algorithm) алгоритм с открытым ключом для создания цифровой подписи.
+    - **НПА** - нормативный правовой акт.
+    - **HTTPS** - (аббр. от англ. HyperText Transfer Protocol Secure) расширение протокола прикладного уровня передачи данных для поддержки шифрования в целях повышения безопасности.
+    - **JSON** - (аббр. от англ. JavaScript Object Notation) текстовый формат обмена данными, основанный на объектно-ориентированном языке программирования JavaScript.
+
+
+
+
+    # Общие положения
+
+    ## Общая характеристика формата передачи данных
+
+    Формат передачи данных основан на структурах формата JSON-схемы. В целях подтверждения достоверности передаваемые данные
+    подписываются ЭП. Передача данных осуществляется по протоколу HTTPS.
+
+    Перечень измеряемых показаний, частота снятия и требования к погрешности измерений определяются соответствующими НПА.
+    Формат передачи данных разрабатывается с учетом возможности дополнения и расширения с сохранением обратной совместимости с более
+    ранними версиями. Формат передачи данных жестко задает форму, но предоставляет широкие возможности для изменения содержимого
+    передаваемых данных.
+
+    # Работа с данными
+
+    ## Порядок передачи данных
+
+    Передача данных о показателях инициируется на стороне АСИ. АСИ в процессе своей работы производит измерение
+    показаний и их накопление. Согласно требованиям НПА осуществляется усреднение измеренных показаний за установленный
+    период времени. Усредненные значения показаний дополняются отметками времени, подписываются ЭП и отправляются
+    посредством формата передачи данных в ПТО УОНВОС. Период отправки усредненных показаний соответствует периоду усреднения.
+
+    Передача прочих данных (служебные данные, информация о регламентных работах, нештатных ситуациях и т.п.) также
+    инициируется на стороне АСИ. Структура с такими данными может быть отправлена вне очереди.
+
+    При приеме структуры с данными на стороне ПТО УОНВОС происходит проверка целостности данных, их достоверности
+    и формируется ответная структура с подтверждением приема. Ответная структура может содержать команду и данные
+    для управления работой АСИ. Ответная структура должна быть подписана ЭП ПТО УОНВОС.
+
+    Если ответная структура получена АСИ и успешная отсылка усредненных показаний в ПТО УОНВОС подтверждена, АСИ
+    продолжает работу в штатном режиме. Если ответная структура содержит команды и данные, АСИ выполняет полученную
+    команду. Если ответная структура не получена, АСИ повторяет попытку отправки данных до получения ответной
+    структуры.
+
+    После выполнения команды АСИ может отправить в ПТО УОНВОС структуру с результатом выполнения команды.
+
+    ПТО УОНВОС имеет возможность послать структуру ответа в АСИ даже в том случае, если данные от АСИ не поступали.
+
+    В одной структуре могут содержаться несколько наборов данных в виде массива, подписанных одной ЭП.
+
+    Все числовые данные передаются как десятичные дроби или как десятичные целые числа. Время и дата передаются
+    в числовом виде как десятичное представление UTC Unix time. ЭП и прочие бинарные данные передаются в виде
+    текста, для чего представляются в шестнадцатеричной системе счисления.
+
+    При обмене данными между АСИ и ПТО УОНВОС не допускается использования промежуточных узлов обработки данных.
+    Все переданные структуры при обмене данными между АСИ и ПТО УОНВОС должны получаться принимающей стороной
+    без внесения каких-либо изменений.
+
+    ## Порядок работы с ЭП
+
+    Генерация и выдача ключей для формирования ЭП осуществляется организациями, уполномоченными соответствующими НПА.
+
+    В каждой отдельной структуре достаточно передать одно поле данных с ЭП. При этом ЭП рассчитывается по сумме
+    всех наборов данных, входящих в данную структуру.
+
+    Для обмена ключами используются стандартные механизмы рукопожатия протокола HTTPS. При невозможности
+    автоматического обмена ключей допускается передача сертификатов с ключами вручную по любым доступным каналам связи.
+
+    # Структура
+
+    ## Описание структуры передаваемых данных (от АСИ к ПТО УОНВОС)
+
+    АСИ передает в ПТО УОНВОС JSON структуру с определяемым данным документом набором полей данных
+    (далее - набор данных или DataSet). Обязательными для передачи являются все поля данных.
+    АСИ может передать единовременно несколько разных показаний, для этого допускается передача в одной
+    JSON структуре нескольких наборов полей данных в виде массива, подписанных одной ЭП.
+
+    Каждый набор данных содержит в себе все необходимое для идентификации содержимого - от какого объекта,
+    какого средства измерения, в какое время и в каких единицах измерения были переданы данные.
+    Для данных, содержащих усредненные показания измерений, указывается время начала и время окончания усреднения,
+    а для данных, измеряемых на текущий момент времени - время начала всегда равно времени окончания.
+
+    Каждому набору данных АСИ присваивает идентификатор - он необходим для определения того, на какой именно набор
+    данных от ПТО УОНВОС приходит ответ. Если же необходимо выслать данные в ответ на команду,
+    пришедшую от ПТО УОНВОС - то используется идентификатор, сформированный ПТО УОНВОС.
+
+    ## Описание структуры передаваемых данных (от ПТО УОНВОС к АСИ)
+
+    ПТО УОНВОС передает в АСИ JSON структуру с определяемым данным документом набором полей данных.
+    Обязательными для передачи являются все поля данных.
+    ПТО УОНВОС может передать единовременно несколько разных ответов (команд), для этого допускается передача в
+    одной JSON структуре нескольких наборов полей данных в виде массива, подписанных одной ЭП.
+
+    Каждый набор данных содержит в себе все необходимое для идентификации содержимого - для какого объекта,
+    какого средства измерения и какая команда были переданы в ответе.
+
+    При ответе на данные, пришедшие от АСИ указывается тот идентификатор набора данных, на который формируется ответ.
+    Если же инициатором отправки ответа (команды) является ПТО УОНВОС, то идентификатор формируется ПТО УОНВОС.
+
+    ## Типы передаваемых сообщений об ошибках (от ПТО УОНВОС к АСИ)
+
+    - **403** – В данных ошибка, данные не полные, значения выходит за допустимые пределы или тип данных неизвестен
+    - **403** – Не передано значение заголовка serial
+    - **403** – Не передано значение заголовка signature
+    - **403** – Нет зарегистрированного ключа для №{$serial}. Отладочный запрос.
+    - **403** – Нет зарегистрированного ключа для №{$serial}
+    - **403** – BadDS – Неправильная подпись для данных.  Проверьте что подписываемые данные эквивалентны отправляемому телу запроса
+    - **500** – Не передано значение заголовка token или ключ недействителен
+    - **500** – Переданное значение не соответствует допустимому формату параметра
+    - **400** – Период показания 'value_uuid' параметра parameter_uuid указан не верно, timestamp_start (начало замера) должен быть меньше timestamp_end (конец замера).
+    - **400** – Окончание замера показания 'value_uuid' параметра parameter_uuid не должен быть позже текущего момента времени.
+    - **400** – Показание 'value_uuid' параметра parameter_uuid уже зафиксировано Атрибут value_uuid каждого нового значения должен быть уникален, а период измерения timestamp_start - timestamp_end не пересекаться с ранее переданными.
+    - **Пустой статус** – Данные имеют разный статус передачи.
+
+    # Методы авторизации
+
+    Поддерживаемые методы:
+      - API Key (Fingerprint)
+
+  version: 1.0.1
+  title: Формат передачи данных о показателях выбросов загрязняющих веществ и (или) сбросов загрязняющих веществ по информационно-телекоммуникационным сетям с автоматических средств измерения и учета показателей выбросов загрязняющих веществ и (или) сбросов загрязняющих веществ в технические средства фиксации и передачи в государственный реестр объектов, оказывающих негативное воздействие на окружающую среду
+
+tags:
+  - name: Показания средств измерения
+    description: Получение показаний средств измерения
+
+x-tagGroups:
+  - name: Основное
+    tags:
+      - Показания средств измерения
+      - Конфигурация устройств
+  - name: Служебное
+    tags:
+      - Служебная информация и состояние
+
+paths:
+  '/healthcheck':
+    get:
+      tags:
+        - Показания средств измерения
+      summary: Просмотр текущих состояний средств измерения
+      description: Актуальные значения текущих состояний средств измерения на указанном устройстве
+      operationId: HealthcheckController.status
+      responses:
+        '200':
+          $ref: '#/components/responses/HealthCheckResponse'
+        '400':
+          $ref: '#/components/responses/HealthCheckResponse'
+        '500':
+          $ref: '#/components/responses/HealthCheckResponse'
+
+  '/devices/{device_uuid}/sources':
+    post:
+      tags:
+        - Показания средств измерения
+      summary: Предоставление текущих состояний средств измерения
+      description: Актуальные значения текущих состояний средств измерения на указанном устройстве
+      operationId: DevicesController.addValue
+      parameters:
+        - name: device_uuid
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/DeviceUUID'
+          example: '2a7d4daa-3554-4b27-b889-c124cf1c1523'
+        - name: serial
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/SignatureSerial'
+        - name: signature
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/Signature'
+      requestBody:
+        $ref: '#/components/requestBodies/Sources'
+      responses:
+        '200':
+          $ref: '#/components/responses/ApiResponse'
+        '401':
+          $ref: '#/components/responses/ApiResponseBad'
+        '403':
+          $ref: '#/components/responses/ApiResponseForbidden'
+    get:
+      tags:
+        - Показания средств измерения
+      summary: Просмотр текущих состояний средств измерения
+      description: Актуальные значения текущих состояний средств измерения на указанном устройстве
+      operationId: DevicesController.getValuesCsv
+      parameters:
+        - name: device_uuid
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/DeviceUUID'
+          example: '2a7d4daa-3554-4b27-b889-c124cf1c1523'
+        - name: serial
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/SignatureSerial'
+      security:
+        - token: []
+      responses:
+        '200':
+          description: Документ CSV
+          content:
+            text/csv:
+              example: "request_uuid  certificate_serial  value_uuid  device_uuid  source_uuid  sensor_uuid  parameter_uuid  onv  pniv  code  unit  timestamp_start  timestamp_end  value  created_at\nccbd84dd-7115-4ba0-89b7-4d73602b8289  73EFFA7B32E780471A207FF6B101610E271651EA  f0cc04fe-c87a-4a04-9d48-dcc4a2cacda5  2a7d4daa-3554-4b27-b889-c124cf1c1523  1307084c-89ba-40c4-90b8-bc9137fab0d8  36b281c8-b1e8-4b7f-85c9-4d2e4bb857ac  f0cc04fe-c87a-4a04-9d48-dcc4a2cacda5  03-0177-001276-П  1  H2SkgPerHour  ppm  2019-05-24T11:29:51.000000Z  2019-05-24T11:29:51.000000Z  10.2  2021-08-23 16:50:04"
+
+components:
+
+  securitySchemes:
+    token:
+      description: >
+        JWT-токен
+      type: apiKey
+      name: token
+      in: header
+
+  schemas:
+
+    ONV:
+      title: Идентификатор ОНВ
+      type: string
+      format: ONV
+      description: Уникальный идентификатор ОНВ
+      pattern: '[a-яА-Яa-zA-Z0-9]{2}-[a-яА-Яa-zA-Z0-9]{4}-[а-яА-Яa-zA-Z0-9]{6}-[А-Я]{1}'
+      example: '03-0177-001276-П'
+
+    PNIV:
+      title: Идентификатор источника измерений
+      type: string
+      format: string
+      description: Уникальный Номер Источника Выбросов внутри ОНВ в соответствии с реестром ОНВ
+      example: "1"
+
+    UUID:
+      title: Идентификатор
+      type: string
+      format: UUID4
+      description: Уникальный идентификатор
+      pattern: '[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}'
+      example: 'f0cc04fe-c87a-4a04-9d48-dcc4a2cacda5'
+
+    HttpStatusCode:
+      title: HTTP-код ответа сервера при получении данных
+      type: integer
+      format: int
+      readOnly: true
+      description: Код ответа
+      enum:
+        - 200
+        - 201
+        - 204
+        - 401
+        - 403
+        - 500
+        - 501
+        - 503
+        - 504
+      example: 200
+      minimum: 200
+      maximum: 504
+
+    HttpStatusCodeBad:
+      title: HTTP-код ответа сервера при неверной авторизации
+      type: integer
+      format: int
+      readOnly: true
+      description: Код ответа
+      example: 401
+
+    HttpStatusCodeForbidden:
+      title: HTTP-код ответа сервера при отказе в доступе
+      type: integer
+      format: int
+      readOnly: true
+      description: Код ответа
+      example: 403
+
+    Id:
+      title: Идентификатор на устройстве
+      type: integer
+      format: int64
+      description: Идентификатор на устройстве
+      example: 1
+
+    SignatureSerial:
+      title: Серийный номер сертификата подписи
+      type: string
+      format: hex
+      description: Серийный номер сертификата подписи
+      example: '73EFFA7B32E780471A207FF6B101610E271651EA'
+
+    SignatureFingerprint:
+      title: Отпечаток сертификата подписи
+      type: string
+      format: hex
+      description: Отпечаток сертификата подписи
+      example: '1ddb5605c5c3e6d4b0edc575070018a8e8dd689f'
+
+    Signature:
+      title: Подпись передаваемых данных
+      type: string
+      format: string
+      description: Подпись передаваемых данных приватным ключом (base64)
+      example: 'MEYCIQDRQiBljEfIrL+eXHuq1HIik9AjpnBQSgUyIpmfvBsOIwIhALjR+SdTmidmDreeR0vvXkkoemqFNlL/pFwnpeqji5It'
+
+    CommandUUID:
+      allOf:
+        - $ref: '#/components/schemas/UUID'
+      title: Идентификатор выполняемой команды
+      description: Уникальный идентификатор выполняемой команды
+      example: '53b7faee-ef17-451a-a37a-878d63648f51'
+
+    DeviceUUID:
+      allOf:
+        - $ref: '#/components/schemas/UUID'
+      title: Идентификатор устройства
+      description: Уникальный идентификатор устройства, которое собирает и отправляет данные (сервер АСИ)
+      example: '1f721ab6-0ee8-41ac-99ee-3de6093486ac'
+
+    SensorUUID:
+      allOf:
+        - $ref: '#/components/schemas/UUID'
+      title: Идентификатор сенсора на устройстве
+      description: Закрепляется за сенсором на весь период его работы
+      example: '36b281c8-b1e8-4b7f-85c9-4d2e4bb857ac'
+
+    SourceUUID:
+      allOf:
+        - $ref: '#/components/schemas/UUID'
+      title: Идентификатор измеряемого источника
+      description: Закрепляется за источником на весь период его эксплуатации
+      example: '1307084c-89ba-40c4-90b8-bc9137fab0d8'
+
+    GeoPoint:
+      title: Географическая точка
+      description: Географические координаты точки - местоположения в системе WGS84
+      type: object
+      required:
+        - lat
+        - lon
+      properties:
+        lat:
+          type: number
+          description: Широта
+          example: 55.753203
+          minimum: -90
+          maximum: 90
+        lon:
+          type: number
+          description: Долгота
+          example: 37.615471
+          minimum: -180
+          maximum: 180
+
+    Device:
+      title: Состояние устройства
+      description: Модель, прошивка, идентификатор, прочая служебная информация
+      type: object
+      required:
+        - device_uuid
+      properties:
+        device_uuid:
+          $ref: '#/components/schemas/DeviceUUID'
+        name:
+          type: string
+          description: Наименование устройства
+          example: Точка мониторинга качества воздуха №1
+          minLength: 1
+          maxLength: 128
+        firmware:
+          $ref: '#/components/schemas/Firmware'
+
+    Firmware:
+      title: Прошивка
+      description: Информация о прошивке
+      type: object
+      required:
+        - version
+      properties:
+        version:
+          type: string
+          format: version
+          description: Версия прошивки
+          pattern: '[0-9]+\.[0-9]+\.[0-9]+\.'
+          example: '1.0.1'
+        checksum:
+          type: string
+          format: md5
+          description: Контрольная сумма прошивки
+          example: 'c4ca4238a0b923820dcc509a6f75849b'
+
+    Command:
+      title: Команда
+      description: Команда для выполнения на устройстве
+      type: object
+      required:
+        - command_uuid
+        - command
+      properties:
+        command_uuid:
+          allOf:
+            - $ref: '#/components/schemas/UUID'
+          title: Идентификатор команды
+          description: Уникальный идентификатор выполняемой команды для отправки результата выполнения
+          example: '5e20dabb-856a-44c1-a7ad-0a5c0810f4a3'
+        command:
+          type: string
+          enum:
+            - 'SEND_SENSORS'
+            - 'SEND_STATUS'
+            - 'FIRMWARE_UPDATE'
+          description: Тип команды
+          example: 'FIRMWARE_UPDATE'
+        arguments:
+          description: Входные аргументы команды, произвольная структура
+          example: '<base64 byte array>'
+
+    Error:
+      title: Ошибка
+      description: Описание ошибки
+      type: object
+      required:
+        - uuid
+        - message
+      properties:
+        uuid:
+          allOf:
+            - $ref: '#/components/schemas/UUID'
+          example: '4084dd63-c71d-4562-95cf-33466b60e82a'
+        message:
+          type: string
+          description: Сообщение ошибки
+          example: 'Ошибочное показание параметра'
+
+    Status:
+      title: Состояние устройства
+      description: Модель, прошивка, идентификатор, прочая служебная информация
+      type: object
+      required:
+        - device
+        - state
+        - timestamp
+      properties:
+        device:
+          $ref: '#/components/schemas/Device'
+        voltage_supply:
+          type: number
+          description: Напряжение питания в вольтах
+          example: 4.9
+          minimum: 0
+        lattery_level:
+          type: integer
+          description: Уровень заряда батареи в процентах
+          example: 40
+          minimum: 0
+          maximum: 100
+        cpu_load:
+          type: integer
+          description: Загрузка процессора в процентах
+          minimum: 0
+          example: 2
+        cpu_temperature:
+          type: integer
+          description: Температура просессора в градусах Цельсия
+          minimum: -80
+          maximum: 200
+          example: 45
+        rssi:
+          type: integer
+          description: Уровень сигнала в dBm
+          example: -73
+        timestamp:
+          type: integer
+          description: Текущее время на устройстве
+          example: 1558697391
+        uptime:
+          type: integer
+          description: Время непрерывной работы устройства в секундах
+          minimum: 0
+        state:
+          enum:
+            - OK
+            - ERROR
+            - MAINTENANCE
+          description: Состояние устройства на момент отправки данных
+          default: "OK"
+          example: "OK"
+
+    Source:
+      title: Источник
+      description: Источник выбросов, объект измерения
+      type: object
+      required:
+        - source_uuid
+        - pniv
+      properties:
+        source_uuid:
+          $ref: '#/components/schemas/SourceUUID'
+        pniv:
+          $ref: '#/components/schemas/PNIV'
+        coordinates:
+          $ref: '#/components/schemas/GeoPoint'
+        name:
+          type: string
+          title: Название источника
+          description: Наименование объекта на котором ведутся измерения
+          minLength: 1
+          maxLength: 128
+          example: "Северная труба 5-го котла"
+        sensors:
+          type: array
+          description: Cредства измерения, установленные на объекте
+          items:
+            $ref: '#/components/schemas/Sensor'
+          minItems: 1
+
+    Sensor:
+      title: Средство измерения
+      description: Средство измерения на источнике выбросов
+      type: object
+      required:
+        - sensor_uuid
+        - parameters
+      properties:
+        sensor_uuid:
+          $ref: '#/components/schemas/SensorUUID'
+        vendor:
+          type: string
+          title: Изготовитель
+          description: Наименование бренда изготовителя
+          minLength: 1
+          maxLength: 128
+          example: "RaLink"
+        serial:
+          type: string
+          description: Серийный номер средства измерения
+          minLength: 1
+          maxLength: 128
+          example: "RA-004563835242-73"
+        state:
+          type: string
+          enum:
+            - OK
+            - ERROR
+            - MAINTENANCE
+          title: Состояние средства измерения
+          description: Состояние средства измерения на момент отправки данных
+          default: "OK"
+          example: "OK"
+        parameters:
+          type: array
+          description: Измеряемые, этим средством измерения, параметры и их значения
+          items:
+            $ref: '#/components/schemas/SensorParameter'
+          minItems: 1
+          example: [
+            {
+              parameter_uuid: "f933af42-bc70-4b4c-b626-bb3fb9f90cf8",
+              code: "H2SgPerSec",
+              name: "Количество твердых частиц в воздухе",
+              values: [
+                {
+                  value_uuid: "a6473b1b-b346-44d9-9594-612a7a80f13c",
+                  timestamp_start: 1558697391,
+                  timestamp_end: 1558697391,
+                  value: 10.2
+                }
+              ]
+            },
+            {
+              parameter_uuid: "ec56e7da-5cd7-4370-99bf-be4836954eec",
+              code: 'ElectronicSealState',
+              name: 'Состояние электронной пломбы АСИ',
+              values: [
+                {
+                  value_uuid: "39848a80-ffd7-47e0-bc9f-0ae720531f1e",
+                  timestamp_start: 1558697391,
+                  timestamp_end: 1558697391,
+                  value: 'OK'
+                }
+              ]
+            },
+            {
+              parameter_uuid: "5e2a1add-1284-4305-b6f2-1d4ae976c054",
+              code: 'AmsState',
+              name: 'Состояние АСИ',
+              values: [
+                {
+                  value_uuid: "44b85a92-feca-481a-9f70-ce15274253d2",
+                  timestamp_start: 1558697391,
+                  timestamp_end: 1558697391,
+                  value: 'OK'
+                }
+              ]
+            }
+          ]
+
+    SensorParameter:
+      title: Измеряемые параметры
+      description: Измеряемые параметры средством измерения
+      type: object
+      required:
+        - parameter_uuid
+        - code
+        - values
+      properties:
+        parameter_uuid:
+          allOf:
+            - $ref: '#/components/schemas/UUID'
+          title: Идентификатор параметра средства измерения
+          description: Должен быть жестко закреплен за параметром на весь период его работы
+        code:
+          type: string
+          title: Код параметра
+          description: Код параметра по справочнику
+          minLength: 1
+          maxLength: 128
+          enum:
+            - "0333"  # H2SgPerSec
+            - "0330"  # SO2gPerSec
+            - "2902"  # SuspendedParticulatesmgPerdm3
+            - "0304"  # NOxgPerSec
+            - "0337"  # COxgPerSec
+            - HFgPerSec
+            - HClgPerSec
+            - "0303"  # NH3gPerSec (повтор, есть альтернативный активный код)
+            - "0003"  # NH4mgPerdm3
+            - "0090"  # PO43mgPerdm3
+            - "0028"  # NO3mgPerdm3
+            - COxFuelgPerSec
+            - OxygenConsumptionmgPerdm3
+            - PH
+            - Volumem3PerHour
+            - TemperatureC
+            - ElectronicSealState
+            - ControlledEquipmentState
+            - AmsState
+            - GasPressurekPa
+            - OxygenContentPercent
+            - HumidityPercent
+            - TemperatureС
+            - ConcentrationmgPerm3
+            - Humidity
+            - OxygenContent
+            - GasPressure
+            - Concentration
+            - TurbiditymgPerdm3
+          example: "H2SgPerSec"
+        name:
+          type: string
+          title: Название параметра
+          description: Наименование измеряемого параметра
+          minLength: 1
+          maxLength: 128
+          example: "Количество твердых частиц в воздухе"
+        values:
+          type: array
+          title: Значения
+          description: Значения измерений
+          items:
+            $ref: '#/components/schemas/SensorParameterValue'
+          minItems: 1
+
+    SensorParameterValue:
+      title: Показание
+      description: Значение параметра
+      type: object
+      required:
+        - value_uuid
+        - timestamp_start
+        - value
+      properties:
+        value_uuid:
+          allOf:
+            - $ref: '#/components/schemas/UUID'
+          title: Идентификатор замера параметра средства измерения
+        timestamp_start:
+          type: integer
+          title: Начало замера
+          description: UnixTimestamp начала последнего (актуального) замера
+          example: 1558697391
+        timestamp_end:
+          type: integer
+          title: Конец замера, если замер не мгновенный
+          description: UnixTimestamp конца последнего (актуального) замера
+          example: 1558697391
+        value:
+          description: Текущее показание параметра средства измерения
+          example: 10.2
+
+    CommandResult:
+      title: Результат выполнения
+      description: Результат выполнения команды на устройстве
+      type: object
+      required:
+        - command_uuid
+        - result
+      properties:
+        command_uuid:
+          allOf:
+            - $ref: '#/components/schemas/CommandUUID'
+          description: UUID выполненной команды
+        result:
+          description: Результат выполнения команды, произвольная структура
+          example: '<base64 byte array>'
+
+  requestBodies:
+
+    Status:
+      content:
+        application/json:
+          schema:
+            allOf:
+              - description: Характеристики и состояние устройства
+                title: Статус устройства
+              - $ref: '#/components/schemas/Status'
+      description: Статус устройства для передачи
+      required: true
+
+    Sources:
+      content:
+        application/json:
+          schema:
+            required:
+              - onv
+              - timestamp
+              - sources
+            properties:
+              onv:
+                $ref: '#/components/schemas/ONV'
+              timestamp:
+                type: integer
+                description: Отметка текущего времени АСИ на момент отправки запроса
+                example: 1558697391
+              sources:
+                type: array
+                description: Массив источников ОНВ
+                minItems: 1
+                items:
+                  $ref: '#/components/schemas/Source'
+      description: Объекты измерения
+      required: true
+
+    CommandResult:
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/CommandResult'
+      description: Результат выполения команд
+      required: true
+
+  responses:
+
+    HealthCheckResponse:
+      description: Данные приняты
+      content:
+        application/json:
+          schema:
+            title: Ответ сервера
+            description: Ответ сервера на запросы состояния сервиса
+            type: object
+            required:
+              - code
+            properties:
+              code:
+                $ref: '#/components/schemas/HttpStatusCode'
+              metrics:
+                type: array
+                description: Метрики
+                items:
+                  title: Метрика сервиса
+                  type: object
+                minItems: 0
+
+    ApiResponse:
+      description: Данные приняты
+      headers:
+        Signature:
+          schema:
+            $ref: '#/components/schemas/Signature'
+      content:
+        application/json:
+          schema:
+            title: Ответ сервера
+            description: Ответ сервера на запросы с предоставлением информации
+            type: object
+            required:
+              - code
+            properties:
+              code:
+                $ref: '#/components/schemas/HttpStatusCode'
+              message:
+                type: string
+                description: Сообщение
+                example: 'Данные приняты'
+              commands:
+                type: array
+                description: Команды для выполнения
+                items:
+                  $ref: '#/components/schemas/Command'
+                minItems: 0
+              errors:
+                type: array
+                description: Ошибки
+                items:
+                  $ref: '#/components/schemas/Error'
+                minItems: 0
+              data:
+                type: object
+
+    ApiResponseBad:
+      description: Данные не верны
+      headers:
+        Signature:
+          schema:
+            $ref: '#/components/schemas/Signature'
+      content:
+        application/json:
+          schema:
+            title: Ответ сервера
+            description: Ответ сервера на запросы с предоставлением информации
+            type: object
+            required:
+              - code
+            properties:
+              code:
+                $ref: '#/components/schemas/HttpStatusCodeBad'
+              message:
+                type: string
+                description: Сообщение
+                example: 'Данные не верны'
+              commands:
+                type: array
+                description: Команды для выполнения
+                items:
+                  $ref: '#/components/schemas/Command'
+                minItems: 0
+              errors:
+                type: array
+                description: Ошибки
+                items:
+                  $ref: '#/components/schemas/Error'
+                minItems: 0
+              data:
+                type: object
+
+    ApiResponseForbidden:
+      description: Отказано в доступе
+      headers:
+        Signature:
+          schema:
+            $ref: '#/components/schemas/Signature'
+      content:
+        application/json:
+          schema:
+            title: Ответ сервера
+            description: Ответ сервера на запросы с предоставлением информации
+            type: object
+            required:
+              - code
+            properties:
+              code:
+                $ref: '#/components/schemas/HttpStatusCodeForbidden'
+              message:
+                type: string
+                description: Сообщение
+                example: 'Отказано в доступе'
+              commands:
+                type: array
+                description: Команды для выполнения
+                items:
+                  $ref: '#/components/schemas/Command'
+                minItems: 0
+              errors:
+                type: array
+                description: Ошибки
+                items:
+                  $ref: '#/components/schemas/Error'
+                minItems: 0
+              data:
+                type: object
